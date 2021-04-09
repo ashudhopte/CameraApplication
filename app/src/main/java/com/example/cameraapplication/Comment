@@ -1,0 +1,488 @@
+package com.example.cameraapplication;
+
+import android.annotation.SuppressLint;
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.ContextWrapper;
+import android.content.Intent;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.media.Image;
+import android.net.Uri;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
+import android.util.Log;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.Toast;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+//import com.example.cameraapplication.adapter.RetrofitClient;
+import com.example.cameraapplication.adapter.RetrofitServices;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.FileProvider;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+
+public class MainActivity extends AppCompatActivity{
+
+    private ImageView imageView;
+    private static final int CAPTURE_REQUEST = 1;
+    private static final int VIDEO_REQUEST = 2;
+    private StorageReference storageRef;
+    String token;
+    Retrofit retrofit;
+    RetrofitServices retrofitServices;
+    String currentPhotoPath;
+    Intent[] intentArray;
+    String imageFileName;
+    String imagePath = "";
+    ContentValues values;
+    File imageFile;
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        Button videoButton = findViewById(R.id.video_button);
+        Button cameraButton = findViewById(R.id.camera_button);
+        imageView = findViewById(R.id.image_view);
+        storageRef = FirebaseStorage.getInstance().getReference();
+
+        cameraButton.setOnClickListener(view->{
+            Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            cameraIntent.putExtra("android.intent.extra.quickCapture",true);
+
+            File file = null;
+//            Uri uri = null;
+            try {
+                file = createImageFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            if(file != null){
+                Uri photoURI = FileProvider.getUriForFile(this,
+                        "com.example.cameraapplication",
+                        file);
+                Log.d("URI", photoURI.toString());
+                cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
+            }
+
+//            values = new ContentValues();
+//            values.put(MediaStore.Images.Media.TITLE, "New Picture");
+//            values.put(MediaStore.Images.Media.DESCRIPTION, "From your Camera");
+//            uri = getContentResolver().insert(
+//                    MediaStore.Images.Media.INTERNAL_CONTENT_URI, values);
+//            cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, uri);
+
+            if(cameraIntent.resolveActivity(getPackageManager()) != null){
+                if(cameraIntent != null){
+//                    intentArray = new Intent[]{cameraIntent};
+                    startActivityForResult(cameraIntent, CAPTURE_REQUEST);
+                }
+                else{
+//                    intentArray = new Intent[0];
+                }
+            }
+
+//            Intent contentSelectionIntent = new Intent(Intent.ACTION_GET_CONTENT);
+//            contentSelectionIntent.addCategory(Intent.CATEGORY_OPENABLE);
+//            contentSelectionIntent.setType("image/*");
+//
+//            Intent chooserIntent = new Intent(Intent.ACTION_CHOOSER);
+//            chooserIntent.putExtra(Intent.EXTRA_INTENT, contentSelectionIntent);
+//            chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, intentArray);
+//            chooserIntent.putExtra(Intent.EXTRA_TITLE, "Image Chooser");
+
+//            startActivityForResult(chooserIntent, CAPTURE_REQUEST);
+        });
+
+//        videoButton.setOnClickListener(view -> {
+//            Intent intent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
+//            intent.putExtra("android.intent.extra.quickCapture",true);
+//            if(intent.resolveActivity(getPackageManager()) != null){
+//                startActivityForResult(intent, VIDEO_REQUEST);
+//            }
+//        });
+
+//        retrofit = RetrofitClient.getRetrofit(token);
+//        retrofitServices = retrofit.create(RetrofitServices.class);
+
+    }
+
+//    private void createFile(Bitmap bitmap, String fileName){
+//
+//        Context context = getApplicationContext();
+//        Log.d("File Name",fileName);
+//
+//        File f = new File(context.getCacheDir(), fileName);
+//
+//
+//            //write the bytes in file
+//        try {
+//
+////            OutputStream os = new FileOutputStream(f);
+////            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, os);
+////            os.flush();
+////            os.close();
+//
+//
+//            f.createNewFile();
+////
+////            //Convert bitmap to byte array
+////
+//            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+//            bitmap.compress(Bitmap.CompressFormat.PNG, 100 /*ignored for PNG*/, bos);
+//            byte[] bitmapdata = bos.toByteArray();
+//            long size = bitmapdata.length;
+//            Log.d("size of image", String.valueOf(size));
+//            FileOutputStream fos = new FileOutputStream(f);
+//            fos.write(bitmapdata);
+//            fos.flush();
+//            fos.close();
+//
+//
+//            upload(f, fileName);
+//        }
+//        catch (Exception e)
+//        {
+//            Log.d("Conversion Exception",e.getMessage());
+//            return ;
+//
+//        }
+
+//        .addOnSuccessListener(uri -> {
+//            Uri downloadUri = uri;
+//            Log.d(downloadUri.toString(), "url");
+//        }).addOnFailureListener(e -> Log.d("download url error", e.getMessage()));
+
+
+
+
+
+//        CognitoCachingCredentialsProvider credentialsProvider;
+//            credentialsProvider = new CognitoCachingCredentialsProvider(
+//                    getApplicationContext(),
+//                    "ap-south-1:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", // Identity Pool ID
+//                    Regions.AP_SOUTH_1 // Region
+//            );
+        //        AmazonS3 s3 = new AmazonS3Client(credentialsProvider);
+
+
+//        AmazonS3Client s3 = new AmazonS3Client(new BasicAWSCredentials("AKIA5YEMLQ7JUYGL2YD3", "TncA62Jtxia0pcIibr4clbq3Ax3k0A4bIpQOCohN"));
+
+//        AWSCredentials credentials = new BasicAWSCredentials(
+//                "AKIA5YEMLQ7JUYGL2YD3",
+//                "TncA62Jtxia0pcIibr4clbq3Ax3k0A4bIpQOCohN"
+//        );
+//
+//        AmazonS3 s3 = AmazonS3ClientBuilder
+//                .standard()
+//                .withCredentials(new AWSStaticCredentialsProvider(credentials))
+//                .withRegion(Regions.AP_SOUTH_1)
+//                .build();
+//
+//
+//        TransferUtility transferUtility = new TransferUtility(s3, getApplicationContext());
+//
+//        String region = "ap-south-1";
+//        String bucketName = "mycovid19tracker";
+//        final TransferObserver observer = transferUtility.upload(
+//                "mycovid19tracker",  //this is the bucket name on S3
+//                "https://s3-ap-south-1.amazonaws.com/mycovid19tracker/"+fileName, //this is the path and name
+//                f, //path to the file locally
+//                CannedAccessControlList.PublicRead); //to make the file public
+
+//        PutObjectRequest por = new PutObjectRequest( Constants.getPictureBucket(),
+//                Constants.PICTURE_NAME,
+//                new java.io.File( filePath) );
+//
+//        s3Client.putObject( por );
+
+//        Log.d("before transfer","lllll");
+//        observer.setTransferListener(new TransferListener() {
+//            @Override
+//            public void onStateChanged(int id, TransferState state) {
+//                if (state.equals(TransferState.COMPLETED)) {
+//                    //Success
+//                    Toast.makeText(MainActivity.this, "Uploaded.", Toast.LENGTH_LONG).show();
+//                } else if (state.equals(TransferState.FAILED)) {
+//                    //Failed
+//                    Toast.makeText(MainActivity.this, "Upload Failed.", Toast.LENGTH_LONG).show();
+//
+//                }
+//
+//            }
+//
+//            @Override
+//            public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
+//
+//                Log.d("change", " "+bytesCurrent);
+//            }
+//
+//            @Override
+//            public void onError(int id, Exception ex) {
+//
+//                Log.d("Upload Err", ex.getMessage());
+//
+//            }
+//        });
+//    }
+
+//    private String getRealPathFromURI(Uri contentURI) {
+//        String result;
+//        Cursor cursor = getContentResolver().query(contentURI, null, null, null, null);
+//        if (cursor == null) { // Source is Dropbox or other similar local file path
+//            result = contentURI.getPath();
+//        } else {
+//            cursor.moveToFirst();
+//            int idx = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
+//            result = cursor.getString(idx);
+//            cursor.close();
+//        }
+//        return result;
+//    }
+
+    private void upload(Uri u){
+//        Uri file = Uri.fromFile(f);
+        Log.d("upload file uri", u.toString());
+        StorageReference ref = storageRef.child("images/"+u.getLastPathSegment());
+
+        ref.putFile(u)
+                .addOnSuccessListener(taskSnapshot -> {
+                    ref.getDownloadUrl().addOnSuccessListener(uri -> {
+                        String dUrl = uri.toString();
+                        Toast.makeText(MainActivity.this, "Url Stored.", Toast.LENGTH_LONG).show();
+                        Log.d("URL", dUrl);
+
+//                        saveUrl(dUrl);
+                    })
+                            .addOnFailureListener(e -> Log.d("download url error", e.getMessage()));
+
+                    Toast.makeText(MainActivity.this, "Uploaded to Firebase.", Toast.LENGTH_LONG).show();
+                })
+                .addOnFailureListener(e -> {
+                    Log.d("Firebase upload error", e.getMessage());
+                });
+    }
+
+//    private void saveUrl(String dUrl){
+//        ImageUploader imageUploader = new ImageUploader();
+//        imageUploader.setInputUrl(dUrl);
+//
+//        Call<ImageUploader> imageUploaderCall = retrofitServices.uploadImage(imageUploader);
+//
+//        imageUploaderCall.enqueue(new Callback<ImageUploader>() {
+//            @Override
+//            public void onResponse(Call<ImageUploader> call, Response<ImageUploader> response) {
+//                ImageUploader imageUploader = response.body();
+//                if(imageUploader != null){
+//                    String outputUrl = imageUploader.getOutputUrl();
+//                    showImage(outputUrl);
+//                }
+//            }
+//
+//            @Override
+//            public void onFailure(Call<ImageUploader> call, Throwable t) {
+//                Log.d("Response error", t.getMessage());
+//            }
+//        });
+//
+//    }
+//
+//    private void showImage(String outputUrl){
+//        try {
+//            URL url = new URL(outputUrl);
+//            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+//            connection.setDoInput(true);
+//            connection.connect();
+//            InputStream input = connection.getInputStream();
+//            Bitmap myBitmap = BitmapFactory.decodeStream(input);
+//            Log.e("Bitmap","returned");
+//            imageView.setImageBitmap(myBitmap);
+//        }
+//        catch (IOException e) {
+//            e.printStackTrace();
+//            Log.e("Exception",e.getMessage());
+//        }
+//    }
+
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+//        @SuppressLint("SimpleDateFormat")
+//        String timeStamp = (String) new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+//        String fileName = "SI_"+timeStamp+".png";
+
+//        if(data != null){
+//
+//        }
+
+        //photo camera used
+        if (requestCode == CAPTURE_REQUEST) {
+            Log.d("request Code", "correct");
+            if(resultCode == RESULT_OK){
+                Log.d("result Code", "correct");
+                if(data != null){
+                    Log.d("data", "not null");
+                    Uri newUri = data.getData();
+                    Log.d("newUri", newUri.toString());
+                    upload(newUri);
+                }
+                else Log.d("data", "null");
+            }
+            else Log.d("result code", "wrong");
+
+
+
+//            Uri selectedImageURI = data.getData();
+//            Log.d("uri", selectedImageURI.toString());
+//            imageFile = new File(getRealPathFromURI(selectedImageURI));
+//            imageView.setImageURI(selectedImageURI);
+
+//            Uri dataUri = data.getData();
+//            Log.d("uri", dataUri.toString());
+//            String path = dataUri.getPath();
+//            Log.d("path", path);
+
+//            Bitmap photo = (Bitmap) data.getExtras().get("data");
+//            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+//            photo.compress(Bitmap.CompressFormat.PNG, 100, bytes);
+//            String path = MediaStore.Images.Media.insertImage(getContentResolver(), photo, fileName, null);
+
+//            Bitmap imageBitmap = (Bitmap) data.getExtras().get("data");
+//            imageView.setImageBitmap(imageBitmap);
+
+//            File out = new File(getFilesDir(), "newImage.jpg");
+//            if (!out.exists()) {
+//                Toast.makeText(getBaseContext(), "Error while capturing image", Toast.LENGTH_LONG).show();
+//
+//                return;
+//            }
+//            Uri.fromFile(image);
+//            Intent i=new Intent(Intent.ACTION_VIEW);
+//
+//            if(image != null){
+//                i.setDataAndType(Uri.fromFile(image), "image/*");
+//                startActivity(i);
+//                finish();
+//            }
+//            else{
+//                Log.d("Image show error", "line 337");
+//            }
+
+
+//            try {
+//                galleryAddPic();
+//                Toast.makeText(this, "Saved to Gallery.", Toast.LENGTH_LONG).show();
+//            }
+//            catch (Exception e){
+//                Log.d("Gallery exception", "no broadcast");
+//            }
+
+
+//            Uri newUri = data.getData();
+//            Log.d("newUri", newUri.toString());
+//            upload(newUri);
+
+
+//            File imgFile = new File(currentPhotoPath);
+//            if(imgFile.exists())
+//            {
+//                upload(imgFile);
+//                Bitmap myBitmap = BitmapFactory.decodeFile(currentPhotoPath);
+//                imageView.setImageBitmap(myBitmap);
+//            }
+
+//            ContextWrapper cw = new ContextWrapper(getApplicationContext());
+//            File directory = cw.getDir("my_images/Pictures", Context.MODE_PRIVATE);
+//            File file = new File(directory, imageFileName+".png");
+//
+//            upload(file);
+
+//            createFile(imageBitmap,fileName);
+
+        }//storage used
+//        else if(data != null && data.getClipData() == null && data.getDataString() != null){
+//            Log.d("storage", "used");
+//            String dataString = data.getDataString();
+//            if(dataString != null){
+//                Bitmap mBitmap = BitmapFactory.decodeFile(dataString);
+//
+//                imageView.setImageBitmap(mBitmap);
+//            }
+//        }//video camera used
+//        else if (requestCode == VIDEO_REQUEST && resultCode == RESULT_OK && data != null) {
+//            Uri videoUri = data.getData();
+//
+////            capturedVideo.setVideoURI(videoUri);
+////            capturedVideo.setFocusable(true);
+////            capturedVideo.seekTo(1);
+////            MediaController mc = new MediaController(this);
+////            capturedVideo.setMediaController(mc);
+//
+//            //upload();
+//        }
+
+        else{
+            Log.d("request code", "wrong");
+        }
+    }
+
+
+
+
+    private File createImageFile() throws IOException {
+        // Create an image file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        imageFileName = "SI_" + timeStamp+"_";
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+//        out = new File(storageDir, imageFileName+".png");
+        File image = File.createTempFile(
+                imageFileName,  /* prefix */
+                ".png",         /* suffix */
+                storageDir      /* directory */
+        );
+
+//        imagePath = storageDir.getAbsolutePath();
+//        File file = new File(imagePath);
+//        Uri outUri = Uri.fromFile(file);
+
+        // Save a file: path for use with ACTION_VIEW intents
+        currentPhotoPath = image.getAbsolutePath();
+        Log.d("AbsolutePath", currentPhotoPath);
+        return image;
+    }
+
+//    private void galleryAddPic() {
+//        Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+//        File f = new File(currentPhotoPath);
+//        Uri contentUri = Uri.fromFile(f);
+//        mediaScanIntent.setData(contentUri);
+//        this.sendBroadcast(mediaScanIntent);
+//    }
+
+
+}
