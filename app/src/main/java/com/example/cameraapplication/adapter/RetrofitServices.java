@@ -8,6 +8,6 @@ import retrofit2.http.POST;
 
 public interface RetrofitServices {
 
-    @POST("image-upload")
+    @POST("cbox")
     Call<ImageUploader> uploadImage(@Body ImageUploader imageUploader);
 }

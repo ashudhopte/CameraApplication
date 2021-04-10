@@ -10,8 +10,8 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class RetrofitClient {
 
     static Retrofit retrofit = null;
-    public static String BASEURL = "http://192.168.137.1:5050/camera/camera-api/";
-
+//    public static String BASEURL = "http://192.168.137.1:5050/camera/camera-api/";
+    public static String BASEURL = "http://3.7.19.151:6060/";
     static OkHttpClient client;
 
     static String token="";
@@ -21,9 +21,9 @@ public class RetrofitClient {
         HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();
         interceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
         client = new OkHttpClient.Builder()
-                .connectTimeout(20, TimeUnit.SECONDS)
-                .readTimeout(20, TimeUnit.SECONDS)
-                .writeTimeout(20, TimeUnit.SECONDS)
+                .connectTimeout(60*5, TimeUnit.SECONDS)
+                .readTimeout(60*5, TimeUnit.SECONDS)
+                .writeTimeout(60*5, TimeUnit.SECONDS)
                 .addInterceptor(interceptor).build();
 
 

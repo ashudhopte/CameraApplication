@@ -230,12 +230,9 @@ public class MainActivity extends AppCompatActivity{
                         dUrl = uri.toString();
                         Toast.makeText(MainActivity.this, "Url Stored.", Toast.LENGTH_LONG).show();
                         Log.d("URL", dUrl);
-//                        useRetrofit(dUrl);
-                        setImage(dUrl);
-                        imageView.setOnClickListener(view -> {
-                            dialog(dUrl);
+                        useRetrofit(dUrl);
+//                        setImage(dUrl);
 
-                        });
 
                     })
                             .addOnFailureListener(e -> Log.d("download url error", e.getMessage()));
@@ -250,13 +247,13 @@ public class MainActivity extends AppCompatActivity{
                 });
     }
 
-    private void dialog(String dUrl){
+    private void dialog(String url){
         fullScreenProgress.setVisibility(View.VISIBLE);
         fullScreenProgress.bringToFront();
 
         try{
             Log.d("picasso","trying picasso");
-            Picasso.with(MainActivity.this).load(dUrl).into(fullImageView);
+            Picasso.with(MainActivity.this).load(url).into(fullImageView);
 
             Log.d("picasso", "picasso done");
             fullScreenProgress.setVisibility(View.INVISIBLE);
@@ -274,7 +271,7 @@ public class MainActivity extends AppCompatActivity{
         }catch(Exception e){e.printStackTrace();}
     }
 
-    private void setImage(String dUrl){
+    private void setImage(String url){
         videoView.setVisibility(View.INVISIBLE);
         progressText.setText(getResources().getString(R.string.downloading_image));
         progressLayout.setVisibility(View.VISIBLE);
@@ -283,8 +280,9 @@ public class MainActivity extends AppCompatActivity{
         Log.d("picasso", "inside setImage");
         try{
             Log.d("picasso","trying picasso");
-            Picasso.with(this).load(dUrl).into(imageView);
+            Picasso.with(this).load(url).into(imageView);
             imageView.setVisibility(View.VISIBLE);
+            imageView.bringToFront();
             Log.d("picasso", "picssso done");
             progressLayout.setVisibility(View.INVISIBLE);
 
@@ -488,14 +486,20 @@ public class MainActivity extends AppCompatActivity{
     }
 
     private void setVideo(Uri videoUri){
+        progressLayout.bringToFront();
+        progressText.setText(getString(R.string.setting_media));
+        progressLayout.setVisibility(View.VISIBLE);
+
         imageView.setVisibility(View.INVISIBLE);
         videoView.setVideoURI(videoUri);
         videoView.setFocusable(true);
         videoView.seekTo(1);
         MediaController mc = new MediaController(this);
         videoView.setMediaController(mc);
-
+        progressLayout.setVisibility(View.INVISIBLE);
         videoView.setVisibility(View.VISIBLE);
+        videoView.bringToFront();
+
 //        saveToDevice.setActivated(true);
     }
 
@@ -566,6 +570,9 @@ public class MainActivity extends AppCompatActivity{
 
     private void useRetrofit(String inputUrl){
 
+        progressText.setText(getString(R.string.downloading_image));
+        progressLayout.setVisibility(View.VISIBLE);
+        progressLayout.bringToFront();
         retrofit = RetrofitClient.getRetrofit(token);
         retrofitServices = retrofit.create(RetrofitServices.class);
 
@@ -582,12 +589,18 @@ public class MainActivity extends AppCompatActivity{
                 if(imageUploader != null){
                     outputUrl = imageUploader.getOutputUrl();
                     Log.d("output url", outputUrl);
+                    Toast.makeText(MainActivity.this, outputUrl, Toast.LENGTH_LONG).show();
                     setImage(outputUrl);
 //                    setOutputUrl(outputUrl);
+                    progressLayout.setVisibility(View.INVISIBLE);
+                    imageView.setOnClickListener(view -> {
+                        dialog(outputUrl);
 
+                    });
 
                 }
                 else Log.d("retrofit response", "no output url");
+                progressLayout.setVisibility(View.INVISIBLE);
             }
 
             @Override
@@ -595,6 +608,7 @@ public class MainActivity extends AppCompatActivity{
                 Log.d("retrofit", "failed");
                 Toast.makeText(MainActivity.this, t.getMessage(), Toast.LENGTH_LONG).show();
                 Log.d("retrofit", t.getMessage());
+                progressLayout.setVisibility(View.INVISIBLE);
             }
         });
     }

@@ -3,4 +3,5 @@
     <string name="uploading_image">Uploading Image</string>
     <string name="downloading_image">Downloading Image</string>
     <string name="uploading_video">Uploading Video</string>
+    <string name="setting_media">Setting Media</string>
 </resources>
