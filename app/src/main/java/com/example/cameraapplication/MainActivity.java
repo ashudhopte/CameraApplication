@@ -47,12 +47,16 @@ import java.util.Date;
 import com.example.cameraapplication.adapter.RetrofitClient;
 import com.example.cameraapplication.adapter.RetrofitServices;
 import com.github.chrisbanes.photoview.PhotoView;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+import com.squareup.picasso.MemoryPolicy;
+import com.squareup.picasso.NetworkPolicy;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.FileProvider;
@@ -73,26 +77,22 @@ public class MainActivity extends AppCompatActivity{
     Retrofit retrofit;
     RetrofitServices retrofitServices;
     String currentPhotoPath;
-    Intent[] intentArray;
     String imageFileName;
     File image;
     String dUrl = "";
     private ProgressBar progressBar;
     private TextView progressText;
     ConstraintLayout progressLayout;
-//    private EditText outputUrlText;
     String outputUrl;
     ImageUploader imageUploader;
-//    Button saveToDevice;
     TouchImageView fullImageView;
-    Bundle bundle;
     boolean dialogOpen = false;
     Dialog imageDialog;
     ImageButton dismissButton;
     ProgressBar fullScreenProgress;
-//    String link = "";
-    Boolean dialog = false;
+    boolean p = false;
 
+    //menu option
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
 
@@ -101,7 +101,7 @@ public class MainActivity extends AppCompatActivity{
         return true;
     }
 
-
+    //menu option click
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == R.id.save_menu) {
@@ -110,16 +110,16 @@ public class MainActivity extends AppCompatActivity{
         return super.onOptionsItemSelected(item);
     }
 
+    //when activity is started
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
+        //mapping the frontend with values
         Button videoButton = findViewById(R.id.video_button);
         Button cameraButton = findViewById(R.id.camera_button);
         Button pickButton = findViewById(R.id.pick_btn);
-//        saveToDevice = findViewById(R.id.save_button);
         imageView = findViewById(R.id.image_view);
         imageView.setVisibility(View.INVISIBLE);
         videoView = findViewById(R.id.video_view);
@@ -130,7 +130,7 @@ public class MainActivity extends AppCompatActivity{
         progressLayout = findViewById(R.id.progress_layout);
         progressLayout.setVisibility(View.INVISIBLE);
 
-
+        //initializing dialog
         imageDialog = new Dialog(MainActivity.this, android.R.style.Theme_Translucent_NoTitleBar_Fullscreen);
         imageDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
 //                            imageDialog.setCancelable(false);
@@ -142,7 +142,9 @@ public class MainActivity extends AppCompatActivity{
 
 //        saveToDevice.setActivated(false);
 
+        //click listener
         cameraButton.setOnClickListener(view->{
+
             Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
             cameraIntent.putExtra("android.intent.extra.quickCapture",true);
 
@@ -184,41 +186,20 @@ public class MainActivity extends AppCompatActivity{
         });
 
 
-        pickButton.setOnClickListener(view -> pickFile());
-
-
-//        if(savedInstanceState != null){
-//            dUrl = savedInstanceState.getString("link");
-//            dialog = savedInstanceState.getBoolean("dialogOpen");
-//
-//            if(dialog){
-//                dialog(dUrl);
-//            }else{
-//                setImage(dUrl);
-//            }
-//        }
-
-
+        pickButton.setOnClickListener(view -> {
+            Intent photoPickerIntent = new Intent(Intent.ACTION_GET_CONTENT);
+            photoPickerIntent.setType("*/*");
+            if(photoPickerIntent.resolveActivity(getPackageManager()) != null){
+                startActivityForResult(photoPickerIntent, SELECT_PHOTO);
+            }
+        });
     }
 
-
-
-
-    private void pickFile(){
-        Intent photoPickerIntent = new Intent(Intent.ACTION_GET_CONTENT);
-        photoPickerIntent.setType("*/*");
-        if(photoPickerIntent.resolveActivity(getPackageManager()) != null){
-            startActivityForResult(photoPickerIntent, SELECT_PHOTO);
-        }
-
-    }
-
-
+    //upload method
     private void upload(Uri u){
+
         progressLayout.bringToFront();
-//        progressBar.setVisibility(View.VISIBLE);
         progressText.setText(getResources().getString(R.string.uploading_image));
-//        progressText.setVisibility(View.VISIBLE);
         progressLayout.setVisibility(View.VISIBLE);
 
         Log.d("upload file uri", u.toString());
@@ -247,13 +228,15 @@ public class MainActivity extends AppCompatActivity{
                 });
     }
 
+    //open dialog
     private void dialog(String url){
         fullScreenProgress.setVisibility(View.VISIBLE);
         fullScreenProgress.bringToFront();
 
         try{
             Log.d("picasso","trying picasso");
-            Picasso.with(MainActivity.this).load(url).into(fullImageView);
+            Picasso.with(MainActivity.this).load(url).networkPolicy(NetworkPolicy.NO_CACHE)
+                    .memoryPolicy(MemoryPolicy.NO_CACHE).into(fullImageView);
 
             Log.d("picasso", "picasso done");
             fullScreenProgress.setVisibility(View.INVISIBLE);
@@ -271,6 +254,7 @@ public class MainActivity extends AppCompatActivity{
         }catch(Exception e){e.printStackTrace();}
     }
 
+    //setting image to imageview
     private void setImage(String url){
         videoView.setVisibility(View.INVISIBLE);
         progressText.setText(getResources().getString(R.string.downloading_image));
@@ -280,12 +264,16 @@ public class MainActivity extends AppCompatActivity{
         Log.d("picasso", "inside setImage");
         try{
             Log.d("picasso","trying picasso");
-            Picasso.with(this).load(url).into(imageView);
+            Picasso.with(this).load(url).networkPolicy(NetworkPolicy.NO_CACHE)
+                    .memoryPolicy(MemoryPolicy.NO_CACHE).into(imageView);
             imageView.setVisibility(View.VISIBLE);
             imageView.bringToFront();
             Log.d("picasso", "picssso done");
             progressLayout.setVisibility(View.INVISIBLE);
+            imageView.setOnClickListener(view -> {
+                dialog(url);
 
+            });
         }
         catch (Exception e){
             Log.d("picasso 1", "no download");
@@ -296,7 +284,7 @@ public class MainActivity extends AppCompatActivity{
 
     }
 
-    private void saveToDevice(File file){
+//    private void saveToDevice(File file){
 
 //        File SDCardRoot = Environment.getExternalStorageDirectory();
 //        //create a new file, specifying the path, and the filename which we want to save the file as.
@@ -330,59 +318,59 @@ public class MainActivity extends AppCompatActivity{
 
 //        file.renameTo(new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + File.separator + "CameraApp"));
 
-        File destination = new File(Environment.getExternalStorageDirectory() + File.separator + "CameraApp");
-
-        if (!destination.exists()) {
-            Log.d("mkdirs", "not exist");
-            try{
-                destination.mkdirs();
-                Log.d("mkdir try", "done");
-                Log.d("mkdir boolean", destination.exists()+"");
-            }catch(Exception e){
-                Log.d("mkdir catch", e.getMessage());
-            }
-        }
-
-//        File newFile = new File(destination, "saved_file");
-        File newFile = new File(destination.getAbsolutePath() + File.separator + file.getName());
-
-        if(!newFile.exists()){
-            try {
-                newFile.createNewFile();
-                Log.d("mkdir newfile boolean", newFile.exists()+"");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        Log.d("newfile absolute", newFile.getAbsolutePath());
-        FileChannel outputChannel = null;
-        FileChannel inputChannel = null;
-        try {
-            outputChannel = new FileOutputStream(newFile).getChannel();
-            inputChannel = new FileInputStream(file).getChannel();
-            inputChannel.transferTo(0, inputChannel.size(), outputChannel);
-            inputChannel.close();
-            Toast.makeText(this, "File Saved", Toast.LENGTH_LONG).show();
-            file.delete();
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            Toast.makeText(this, "Not Saved", Toast.LENGTH_SHORT).show();
-        } catch (IOException e) {
-            e.printStackTrace();
-            Toast.makeText(this, "Not Saved", Toast.LENGTH_SHORT).show();
-        } finally {
-            try {
-                if (inputChannel != null) {
-                        inputChannel.close();
-                }
-                if (outputChannel != null) outputChannel.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
+//        File destination = new File(Environment.getExternalStorageDirectory() + File.separator + "CameraApp");
+//
+//        if (!destination.exists()) {
+//            Log.d("mkdirs", "not exist");
+//            try{
+//                destination.mkdirs();
+//                Log.d("mkdir try", "done");
+//                Log.d("mkdir boolean", destination.exists()+"");
+//            }catch(Exception e){
+//                Log.d("mkdir catch", e.getMessage());
+//            }
+//        }
+//
+////        File newFile = new File(destination, "saved_file");
+//        File newFile = new File(destination.getAbsolutePath() + File.separator + file.getName());
+//
+//        if(!newFile.exists()){
+//            try {
+//                newFile.createNewFile();
+//                Log.d("mkdir newfile boolean", newFile.exists()+"");
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//
+//        Log.d("newfile absolute", newFile.getAbsolutePath());
+//        FileChannel outputChannel = null;
+//        FileChannel inputChannel = null;
+//        try {
+//            outputChannel = new FileOutputStream(newFile).getChannel();
+//            inputChannel = new FileInputStream(file).getChannel();
+//            inputChannel.transferTo(0, inputChannel.size(), outputChannel);
+//            inputChannel.close();
+//            Toast.makeText(this, "File Saved", Toast.LENGTH_LONG).show();
+//            file.delete();
+//
+//        } catch (FileNotFoundException e) {
+//            e.printStackTrace();
+//            Toast.makeText(this, "Not Saved", Toast.LENGTH_SHORT).show();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//            Toast.makeText(this, "Not Saved", Toast.LENGTH_SHORT).show();
+//        } finally {
+//            try {
+//                if (inputChannel != null) {
+//                        inputChannel.close();
+//                }
+//                if (outputChannel != null) outputChannel.close();
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//    }
 
 //    private void setImageFromStorage(Uri pickUri){
 //        videoView.setVisibility(View.INVISIBLE);
@@ -408,10 +396,15 @@ public class MainActivity extends AppCompatActivity{
 //    }
 
 
+    //returning from outside activity
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-//
+
+        imageView.setVisibility(View.INVISIBLE);
+        videoView.setVisibility(View.INVISIBLE);
+
+        //camera
         if (requestCode == CAPTURE_REQUEST) {
             Log.d("request Code", "correct");
             if(resultCode == RESULT_OK){
@@ -445,6 +438,7 @@ public class MainActivity extends AppCompatActivity{
             Log.d("request code", "wrong");
         }
 
+        //storage
         if(requestCode == SELECT_PHOTO){
             if(resultCode == RESULT_OK){
                 if(data != null){
@@ -469,7 +463,7 @@ public class MainActivity extends AppCompatActivity{
 
 
 
-
+        //video camera
         if (requestCode == VIDEO_REQUEST && resultCode == RESULT_OK && data != null) {
             if(resultCode == RESULT_OK ){
                 if(data != null){
@@ -485,6 +479,7 @@ public class MainActivity extends AppCompatActivity{
         else Log.d("video request", "wrong");
     }
 
+    //setting video to videoview
     private void setVideo(Uri videoUri){
         progressLayout.bringToFront();
         progressText.setText(getString(R.string.setting_media));
@@ -503,6 +498,7 @@ public class MainActivity extends AppCompatActivity{
 //        saveToDevice.setActivated(true);
     }
 
+    //uploading video to firebase
     private void uploadVideo(Uri videoUri){
         progressLayout.bringToFront();
         progressText.setText(getResources().getString(R.string.uploading_video));
@@ -532,7 +528,7 @@ public class MainActivity extends AppCompatActivity{
     }
 
 
-
+    //creating temporary image file
     private File createImageFile() throws IOException {
         // Create an image file name
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
@@ -552,22 +548,22 @@ public class MainActivity extends AppCompatActivity{
         return image;
     }
 
-    private void galleryAdd(Uri contentUri) {
-        try {
-            Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-//        File f = new File(currentPhotoPath);
-//        Uri contentUri = Uri.fromFile(f);
-            mediaScanIntent.setData(contentUri);
-            this.sendBroadcast(mediaScanIntent);
-        }
-        catch (Exception e){
-            Log.d("gallery", "not added");
-        }
+//    private void galleryAdd(Uri contentUri) {
+//        try {
+//            Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+////        File f = new File(currentPhotoPath);
+////        Uri contentUri = Uri.fromFile(f);
+//            mediaScanIntent.setData(contentUri);
+//            this.sendBroadcast(mediaScanIntent);
+//        }
+//        catch (Exception e){
+//            Log.d("gallery", "not added");
+//        }
+//
+//    }
 
-    }
 
-
-
+    //using retrofit to call API
     private void useRetrofit(String inputUrl){
 
         progressText.setText(getString(R.string.downloading_image));
@@ -577,9 +573,7 @@ public class MainActivity extends AppCompatActivity{
         retrofitServices = retrofit.create(RetrofitServices.class);
 
         imageUploader = new ImageUploader();
-        imageUploader.setImageId(null);
         imageUploader.setInputUrl(inputUrl);
-        imageUploader.setOutputUrl(null);
         Call<ImageUploader> imageUploaderCall = retrofitServices.uploadImage(imageUploader);
 
         imageUploaderCall.enqueue(new Callback<ImageUploader>() {
@@ -593,10 +587,7 @@ public class MainActivity extends AppCompatActivity{
                     setImage(outputUrl);
 //                    setOutputUrl(outputUrl);
                     progressLayout.setVisibility(View.INVISIBLE);
-                    imageView.setOnClickListener(view -> {
-                        dialog(outputUrl);
 
-                    });
 
                 }
                 else Log.d("retrofit response", "no output url");
@@ -613,4 +604,28 @@ public class MainActivity extends AppCompatActivity{
         });
     }
 
+    @Override
+    public void onBackPressed() {
+
+        AlertDialog.Builder alert = new AlertDialog.Builder(this, R.style.Theme_MaterialComponents_Light_Dialog_Alert);
+        alert.setTitle("Solar Vision");
+        alert.setMessage("Are you sure?");
+
+        alert.setPositiveButton("Exit", (dialogInterface, i) ->{
+            dialogInterface.dismiss();
+            finish();
+        });
+
+        alert.setNegativeButton("Cancel", (dialogInterface, i) -> dialogInterface.dismiss());
+
+        AlertDialog dialog = alert.create();
+
+
+        dialog.setOnShowListener(dialogInterface -> {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(getColor(R.color.colorPrimary));
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(getColor(R.color.colorPrimary));
+        });
+
+        dialog.show();
+    }
 }
